@@ -1,113 +1,113 @@
-# Rete dei nodi da configurare a mano (solo console)
+# Manual node network setup (console only)
 
-Quando usarla: i nodi hanno Ubuntu installato ma **non** hanno IP, VLAN o bond completi e l'unico accesso è la console web (niente SSH, niente copia/incolla). Si digita poco: pochi comandi a mano, il resto lo fa `configura_rete_locale.sh`.
+When to use it: the nodes have Ubuntu installed but **do not** have a complete IP, VLAN or bond configuration, and the only access is the web console (no SSH, no copy/paste). Very little typing is needed: a few commands by hand, the rest is done by `configura_rete_locale.sh`.
 
-## 0. Da avere prima (dal referente di rete)
+## 0. What you need beforehand (from the network team)
 
-- i **5 VLAN ID**: management, overlay, external, Ceph public, Ceph cluster;
-- le **subnet** di management, overlay, Ceph public, Ceph cluster, e il **gateway** della management;
-- **un IP di management per ciascun nodo** e un **IP libero** (il VIP delle API);
-- conferma che **tutte e due le porte** di ogni bond abbiano link e siano nello **stesso port-channel LACP** (oppure in una coppia di switch con MLAG/vPC).
+- the **5 VLAN IDs**: management, overlay, external, Ceph public, Ceph cluster;
+- the **subnets** for management, overlay, Ceph public and Ceph cluster, plus the management **gateway**;
+- **one management IP per node** and **one free IP** (the API VIP);
+- confirmation that **both ports** of each bond have link and belong to the **same LACP port-channel** (or to a switch pair with MLAG/vPC).
 
-Controllo da fare subito su ogni nodo, con la console:
+Check this right away on every node, from the console:
 
 ```
 sudo grep -E "Slave Interface|MII Status|Aggregator ID" /proc/net/bonding/bond0
 ip -br link
 ```
 
-- Se i due link di `bond0` hanno **Aggregator ID diversi**, lo switch non li aggrega: si chiede di correggerlo (il nodo funziona, ma senza ridondanza reale).
-- Le due porte di Ceph (`bond1`) devono risultare **UP**: se sono DOWN, vanno collegate o abilitate sullo switch.
+- If the two links of `bond0` have **different Aggregator IDs**, the switch is not aggregating them: ask for it to be fixed (the node works, but without real redundancy).
+- The two Ceph ports (`bond1`) must be **UP**: if they are DOWN, they must be cabled or enabled on the switch.
 
-## 1. IP provvisorio, solo per poter copiare i file (su OGNI nodo, da console)
+## 1. Temporary IP, only to be able to copy files (on EVERY node, from the console)
 
-Usare come IP **esattamente quello di management previsto per quel nodo**. `ID` è il VLAN ID di management, `GW` il gateway, `PFX` il prefisso (es. 26).
+Use **exactly the management IP planned for that node**. `ID` is the management VLAN ID, `GW` the gateway, `PFX` the prefix length (e.g. 26).
 
 ```
 sudo ip link add link bond0 name vlanM type vlan id ID
 sudo ip link set vlanM up
-sudo ip addr add IP_NODO/PFX dev vlanM
+sudo ip addr add NODE_IP/PFX dev vlanM
 sudo ip route add default via GW
 ping -c2 GW
 ```
 
-`vlanM` è un nome qualsiasi (non verrà mantenuto). Non è permanente: si perde al riavvio, ed è voluto. Se il `ping` non risponde, la VLAN non è trunkata verso quel nodo o IP/gateway sono sbagliati: si risolve col referente di rete **prima** di continuare.
+`vlanM` is an arbitrary name (it will not be kept). The configuration is not persistent: it is lost on reboot, by design. If `ping` gets no reply, the VLAN is not trunked to that node, or the IP/gateway are wrong: sort it out with the network team **before** continuing.
 
-## 2. Portare il pacchetto sui nodi
+## 2. Getting the package onto the nodes
 
-Da un PC che raggiunge la rete di management (o da un altro nodo, ora che hanno tutti l'IP provvisorio):
+From a PC that can reach the management network (or from another node, now that all of them have the temporary IP):
 
 ```
-scp OPENSTACK_deploy_*.zip OPENSTACK_tests_*.zip UTENTE@IP_NODE01:/tmp/
+scp OPENSTACK_deploy_*.zip OPENSTACK_tests_*.zip USER@NODE01_IP:/tmp/
 ```
 
-Poi su ogni nodo, da console:
+Then, on each node, from the console:
 
 ```
 sudo -i
 cd /root && unzip /tmp/OPENSTACK_deploy_*.zip && unzip /tmp/OPENSTACK_tests_*.zip
 ```
 
-Così il pacchetto è su tutti e tre i nodi. (Se si preferisce, si copia su node01 e da lì sugli altri con `scp -r`.)
+This way the package is on all three nodes. (If you prefer, copy it to node01 and from there to the others with `scp -r`.)
 
-## 3. Configurare la rete: node01 per primo
+## 3. Configure the network: node01 first
 
-Su node01, **da console** (non da SSH):
+On node01, **from the console** (not over SSH):
 
 ```
 cd /root/OPENSTACK_deploy_*
 bash configura_rete_locale.sh
 ```
 
-Lo script:
-1. elenca le schede e propone le porte (`bond0` = quelle già in bond, `bond1` = le altre due multiporta): controllare che siano giuste;
-2. chiede i VLAN ID, le subnet, il gateway, gli IP dei 3 nodi e il VIP (per overlay e Ceph propone lo stesso "numero di host" della management: Invio se va bene);
-3. mostra il riepilogo: **farlo controllare** e rispondere `s`;
-4. toglie da console eventuali VLAN preesistenti con gli stessi ID sui bond (es. quella di management degli installatori) e i bond esistenti (così ricevono i parametri corretti: **non serve cancellarli a mano**), poi applica con `netplan apply` e un rollback automatico: **entro 180 secondi premere Invio per confermare** (solo se il gateway risponde). Se non si conferma, torna da solo alla rete di prima;
-5. imposta l'hostname `node01` e controlla bond, IP e gateway. Eventuali `[ATTENZIONE]` vanno risolti prima di proseguire.
+The script:
+1. lists the NICs and proposes the ports (`bond0` = the ones already bonded, `bond1` = the other two multi-port ones): check that they are correct;
+2. asks for the VLAN IDs, subnets, gateway, the IPs of the 3 nodes and the VIP (for overlay and Ceph it proposes the same "host number" as management: press Enter if that is fine);
+3. shows a summary: **have it reviewed** and answer `s` (yes);
+4. removes from the console any pre-existing VLANs with the same IDs on the bonds (e.g. the installer's management VLAN) and the existing bonds (so they receive the correct parameters: **no need to delete them by hand**), then applies the configuration with `netplan apply` and an automatic rollback: **within 180 seconds press Enter to confirm** (only if the gateway answers). If you do not confirm, it reverts on its own to the previous network configuration;
+5. sets the hostname `node01` and checks bond, IP and gateway. Any `[ATTENZIONE]` (warning) lines must be resolved before continuing.
 
-Prova prima senza toccare nulla: `bash configura_rete_locale.sh --dry-run` (scrive i file in `dry-run/`).
+Try it first without touching anything: `bash configura_rete_locale.sh --dry-run` (writes the files into `dry-run/`).
 
-## 4. Nodi 2 e 3
+## 4. Nodes 2 and 3
 
-Su node01 sono nati `topology.conf` e `ifaces.conf` nella cartella del pacchetto. Da node01 copiarli sugli altri nodi (una volta per nodo, cambiando l'IP):
+On node01, `topology.conf` and `ifaces.conf` have been created in the package folder. From node01, copy them to the other nodes (once per node, changing the IP):
 
 ```
-sudo scp /root/OPENSTACK_deploy_*/topology.conf /root/OPENSTACK_deploy_*/ifaces.conf UTENTE@IP_NODE02:/tmp/
+sudo scp /root/OPENSTACK_deploy_*/topology.conf /root/OPENSTACK_deploy_*/ifaces.conf USER@NODE02_IP:/tmp/
 ```
 
-Poi, da console su quel nodo:
+Then, from the console on that node:
 
 ```
 sudo cp /tmp/topology.conf /tmp/ifaces.conf /root/OPENSTACK_deploy_*/
 cd /root/OPENSTACK_deploy_* && sudo bash configura_rete_locale.sh --usa-piano
 ```
 
-Chiede solo le porte (Invio se giuste) e il numero del nodo (2 o 3), poi applica la rete: confermare con Invio.
+It only asks for the ports (Enter if correct) and the node number (2 or 3), then applies the network configuration: confirm with Enter.
 
-## 5. Chiavi SSH e deploy
+## 5. SSH keys and deployment
 
-Da node01, con le password degli utenti dei nodi:
+From node01, using the passwords of the node users:
 
 ```
 sudo ssh-keygen -t ed25519 -N "" -f /root/.ssh/id_ed25519_os_3node -C os-3node-deploy
-for ip in IP_NODE01 IP_NODE02 IP_NODE03; do
-  sudo cat /root/.ssh/id_ed25519_os_3node.pub | ssh UTENTE@$ip 'sudo mkdir -p /root/.ssh && sudo tee -a /root/.ssh/authorized_keys >/dev/null && sudo chmod 600 /root/.ssh/authorized_keys'
+for ip in NODE01_IP NODE02_IP NODE03_IP; do
+  sudo cat /root/.ssh/id_ed25519_os_3node.pub | ssh USER@$ip 'sudo mkdir -p /root/.ssh && sudo tee -a /root/.ssh/authorized_keys >/dev/null && sudo chmod 600 /root/.ssh/authorized_keys'
 done
-sudo ssh -i /root/.ssh/id_ed25519_os_3node root@IP_NODE02 hostname
+sudo ssh -i /root/.ssh/id_ed25519_os_3node root@NODE02_IP hostname
 ```
 
-Deve stampare `node02` (e analogamente per gli altri). Se `root` non può entrare, vedere `sshd -T | grep permitrootlogin` (deve essere `yes` o `prohibit-password`).
+It must print `node02` (and likewise for the others). If `root` cannot log in, check `sshd -T | grep permitrootlogin` (it must be `yes` or `prohibit-password`).
 
-Procedura completa dall'inizio alla fine: `PROCEDURA_INSTALLAZIONE_BAREMETAL.md`. Poi si prosegue come nella guida: `bash configura_topologia.sh` (aggiunge la rete External se la si ha), `test_render.sh` e `LAB_MODE=0 ./run_all.sh --from-node` dentro tmux.
+Complete start-to-finish procedure: `PROCEDURA_INSTALLAZIONE_BAREMETAL.md`. Then continue as in the guide: `bash configura_topologia.sh` (adds the External network if you have it), `test_render.sh` and `LAB_MODE=0 ./run_all.sh --from-node` inside tmux.
 
-## 6. Se qualcosa va storto
+## 6. If something goes wrong
 
-| Sintomo | Cosa fare |
+| Symptom | What to do |
 |---|---|
-| il nodo perde la rete dopo l'applicazione | non premere Invio: dopo 180 s torna da solo alla rete precedente |
-| "la scheda 'X' non esiste" | nome sbagliato: usare quelli della tabella iniziale |
-| `[ATTENZIONE] ... senza link` su una porta di bond1 | la porta non è collegata o abilitata sullo switch |
-| `[ATTENZIONE] ... NON nello stesso aggregato LACP` | port-channel/MLAG da correggere sullo switch |
-| `gateway ... NON raggiungibile` | VLAN di management non trunkata su bond0, oppure IP o gateway errati |
-| vuoi ripartire da capo | i vecchi netplan sono in `/root/netplan-backup-locale-<data>/` |
+| the node loses network after applying | do not press Enter: after 180 s it reverts on its own to the previous network configuration |
+| "the NIC 'X' does not exist" | wrong name: use the ones from the initial table |
+| `[ATTENZIONE] ... senza link` on a bond1 port | the port is not cabled or not enabled on the switch |
+| `[ATTENZIONE] ... NON nello stesso aggregato LACP` | port-channel/MLAG must be fixed on the switch |
+| `gateway ... NON raggiungibile` | management VLAN not trunked on bond0, or wrong IP or gateway |
+| you want to start over | the old netplan files are in `/root/netplan-backup-locale-<date>/` |

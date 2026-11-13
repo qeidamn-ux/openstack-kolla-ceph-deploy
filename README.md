@@ -18,6 +18,7 @@ This package contains everything required to deploy the cloud. Functional tests 
 - [Ceph OSD Encryption (dm-crypt / LUKS)](#ceph-osd-encryption-dm-crypt--luks)
 - [Consolidated Fixes in This Release](#consolidated-fixes-in-this-release)
 - [Production Technical Debt (from LLD)](#production-technical-debt-from-lld)
+- [Endorsers & Adopters](#-endorsers--adopters)
 
 ---
 
@@ -309,7 +310,7 @@ The default `lacp-rate` is `slow` (compatible with slow or fast switches). Set `
 ### Inter-node network diagnostics
 
 ```bash
-bash verifica_rete_nodi.sh [--count N] [--ports "22 9090"] [--solo-fisico]
+bash verifica_rete_nodi.sh [--count N] [--porte "22 9090"] [--solo-fisico]
 ```
 
 Evaluates packet loss across node pairs and networks using pings of 100 / 1472 / 8972 bytes (DF), TCP ports, and physical bond status (aggregator, pre/post CRC errors, Rx optical power). Exits with `1` on failure.
@@ -536,3 +537,14 @@ sudo OSD_ENCRYPT=no bash 01b_setup_ceph_3NODE.sh
 - **RAID controllers** in non-RAID layouts: switch to native HBAs (true IT mode).
 - **Hostnames:** short, consistent hostnames across all nodes (OVN prerequisite).
 - **Topology:** VLAN IDs, IPs and interface names are read dynamically via `configura_topologia.sh` (avoid editing `lib_topology.sh`).
+
+---
+
+## 🌟 Endorsers & Adopters
+
+We gratefully acknowledge the organizations and professionals who endorse and validate the use of this suite in production or enterprise environments:
+
+* **[Nome Organizzazione / Azienda o Professionista]** — *Role / Context (e.g., Enterprise Infrastructure Team)*
+* **[Altro Endorser]** — *Role / Context*
+
+*(If your organization uses or endorses this deployment suite, feel free to open a Pull Request to add your name to the list.)*

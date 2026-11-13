@@ -1,6 +1,6 @@
 # Installation on three physical servers — complete procedure
 
-Valid for OpenStack v1.7 (Kolla-Ansible, encrypted Ceph, OVN, Barbican, Skyline, Masakari) on **3 physical servers** running Ubuntu 24.04, with access, if needed, **from the console only** (no copy/paste). Network values (VLAN, subnet, IP) are shown as placeholders: they are provided by the network team and typed in at the scripts' prompts.
+Valid for the OpenStack Automation Suite v1.7 (OpenStack 2025.1 "Epoxy" deployed with Kolla-Ansible, encrypted Ceph, OVN, Barbican, Skyline, Masakari) on **3 physical servers** running Ubuntu 24.04, with access, if needed, **from the console only** (no copy/paste). Network values (VLAN, subnet, IP) are shown as placeholders: they are provided by the network team and typed in at the scripts' prompts.
 
 Order: A prerequisites → B node checks → C network → D SSH keys → E topology → F installation → G verification → H functional tests → I troubleshooting.
 

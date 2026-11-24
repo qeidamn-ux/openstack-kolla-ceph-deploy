@@ -366,6 +366,10 @@ summary() {
   echo "    (opzionale) ENABLE_MASAKARI: sudo LAB_MODE=${LAB_MODE} bash 04_masakari.sh$([ "$LAB_MODE" = 0 ] && echo ' --accept-no-fencing')"
   [ "$LEVEL" = all ] && echo "  Dopo 'all' il globals.yml riparte da zero: enable_masakari torna 'no' e si riattiva col 04."
   ## DAVE
+  ## DAVE
+  echo "    (opzionale) ENABLE_OCTAVIA: sudo LAB_MODE=${LAB_MODE} bash 06_octavia.sh"
+  [ "$LEVEL" = all ] && echo "  Dopo 'all' anche enable_octavia torna 'no' (e l'override octavia.conf va riscritto): si riattiva col 06."
+  ## DAVE
 }
 
 main() {

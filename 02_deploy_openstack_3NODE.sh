@@ -183,6 +183,18 @@ masakari_flag() {
 }
 ## DAVE
 
+## DAVE
+# Octavia (provider OVN) lo abilita SOLO il 06_octavia.sh, a cloud sano. Come per
+# Masakari il 02 CONSERVA il valore gia' presente nel globals; la prima volta e' "no".
+octavia_flag() {
+  if ssh_dep "grep -Eq '^enable_octavia: *\"yes\"' /etc/kolla/globals.yml" </dev/null 2>/dev/null; then
+    echo yes
+  else
+    echo no
+  fi
+}
+## DAVE
+
 generate_globals() {
   log_step "Generazione /etc/kolla/globals.yml (OVN + Barbican + External Ceph)"
   ## DAVE
@@ -191,6 +203,8 @@ generate_globals() {
   local SKYLINE_YN="${ENABLE_SKYLINE:-yes}"
   case "$SKYLINE_YN" in yes|no) ;; *) log_warn "ENABLE_SKYLINE='${SKYLINE_YN}' non valido: uso yes"; SKYLINE_YN=yes ;; esac
   [ "$MASAKARI_YN" = yes ] && log_info "enable_masakari: yes conservato (gestito dal 04)"
+  local OCTAVIA_YN; OCTAVIA_YN="$(octavia_flag)"
+  [ "$OCTAVIA_YN" = yes ] && log_info "enable_octavia: yes conservato (gestito dal 06)"
   ## DAVE
   ## DAVE - NTP_LOCAL_MASTER: il nodo master usa chrony con 'local stratum' (nessuna sorgente esterna), quindi
   ## timedatectl lo dichiara "non sincronizzato" anche se gli altri nodi seguono lui. Il precheck NTP di Kolla
@@ -264,12 +278,25 @@ enable_skyline: "${SKYLINE_YN}"
 
 # Fuori scope
 enable_magnum: "no"              # nessun cluster Kubernetes previsto
-enable_octavia: "no"             # LBaaS: milestone successiva (richiede Barbican, gia' attivo)
+## DAVE
+# enable_octavia: non piu' fuori scope, vedi il blocco Octavia piu' sotto (06_octavia.sh)
+## DAVE
 enable_designate: "no"
 enable_manila: "no"
 enable_trove: "no"
 ## DAVE
 enable_masakari: "${MASAKARI_YN}"   # abilitato dal 04_masakari.sh; il 02 non lo spegne
+## DAVE
+## DAVE
+# Octavia (LBaaS) solo con provider OVN: bilanciamento L4 distribuito in OVN, senza
+# amphora. Niente lb-mgmt-net, immagine, flavor, certificati ne' jobboard: Kolla
+# ricava octavia_auto_configure e i controlli sui certificati dalla presenza di
+# 'amphora' nei driver. Le due chiavi provider restano scritte anche con Octavia
+# spento, cosi' un'accensione a mano non attiva le amphora di default.
+# Il provider di default (ovn) sta nell'override /etc/kolla/config/octavia.conf (06).
+enable_octavia: "${OCTAVIA_YN}"     # abilitato dal 06_octavia.sh; il 02 non lo spegne
+octavia_provider_drivers: "ovn:OVN provider"
+octavia_provider_agents: "ovn"
 ## DAVE
 enable_ironic: "no"
 

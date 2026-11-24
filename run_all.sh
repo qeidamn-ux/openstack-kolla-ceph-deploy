@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # =============================================================================
 # run_all.sh — Lancia l'intera catena in un colpo solo (LAB_MODE).
+## DAVE
 #   Ordine: [test_render -> lab_create_vms] -> 00 -> 01 -> 01b -> 02 -> 03 [-> 03b] [-> 04 se ENABLE_MASAKARI=1]
+#           [-> 06 se ENABLE_OCTAVIA=1]
+## DAVE
 #   Le fasi tra [ ] e 03b vengono dal pacchetto TEST FUNZIONALI (opzionale): se non c'e'
 #   vengono saltate (le VM del lab, pero', senza quel pacchetto non si creano: usa --no-vms).
 #   Il pacchetto test si cerca in $TESTS_DIR, in questa cartella, in ../OPENSTACK_tests_*.
@@ -90,7 +93,9 @@ if [ "$HAVE_TESTS" = 1 ]; then
   if LAB_MODE="$LAB_MODE" DEPLOY_DIR="$DEPLOY_DIR" bash "$TESTS_DIR/test_render.sh" </dev/null > "${LOG_DIR}/test_render.log" 2>&1; then
     echo -e "${G}[OK] test_render${N}"
   else
-    echo -e "${R}[FALLITO] test_render — la config non rende, correggi lib_topology.sh${N}"
+## DAVE
+    echo -e "${R}[FALLITO] test_render — controlli offline falliti: vedi ${LOG_DIR}/test_render.log (le righe [FAIL] dicono cosa)${N}"
+## DAVE
     tail -5 "${LOG_DIR}/test_render.log"; exit 1
   fi
 else
@@ -154,6 +159,15 @@ if [ "${ENABLE_MASAKARI:-0}" = 1 ]; then
   MK_ARGS=()
   [ "$LAB_MODE" = 0 ] && [ "${MASAKARI_ACCEPT_NOFENCING:-0}" = 1 ] && MK_ARGS+=(--accept-no-fencing)
   run_root "04_masakari" 04_masakari.sh ${MK_ARGS[@]+"${MK_ARGS[@]}"}
+fi
+## DAVE
+
+## DAVE
+# --- 4. opzionale: Octavia (LBaaS, solo provider OVN) -------------------------
+# ENABLE_OCTAVIA=1 per includerlo. Come Masakari, il 02 non lo riceve: Octavia si
+# abilita solo a cloud sano (il 06 scrive globals + override e fa il deploy mirato).
+if [ "${ENABLE_OCTAVIA:-0}" = 1 ]; then
+  run_root "06_octavia" 06_octavia.sh
 fi
 ## DAVE
 

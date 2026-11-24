@@ -270,7 +270,30 @@ caso sbagliava in due punti.
   `run_all.sh --from-node` (e `install.sh`, che lo inoltra) passa il flag al `00` e non crea VM.
   `--from-node` su un host esterno e' un errore. `test_render.sh`: 11 controlli in piu' (88); poi 9 sui nomi delle interfacce (97) e 8 sul piano IP (105; poi 6 sulla rete External, 111; poi 5 su configura_rete_locale, 116).
 
+- **Octavia (LBaaS) con solo provider OVN**, aggiungibile a un cloud gia' installato: nuovo `06_octavia.sh`
+  (sul modello del `04`, a cloud sano; `--config-only`, `--verify`, `--test-lb`). Scrive nel globals
+  `enable_octavia: "yes"`, `octavia_provider_drivers: "ovn:OVN provider"`, `octavia_provider_agents: "ovn"`
+  e l'override `/etc/kolla/config/octavia.conf` con `default_provider_driver = ovn` (Kolla imposta solo i
+  driver abilitati: senza override il default di Octavia resta `amphora` e `loadbalancer create` senza
+  `--provider` fallisce). Deploy `--tags common,haproxy,horizon,octavia` (+`skyline` se attivo), installa
+  `python-octaviaclient`, verifica container/API (porta 9876)/provider e prova un LB TCP su `os-test-net`.
+  Con solo `ovn` nei driver Kolla spegne `octavia_auto_configure` e i controlli sui certificati: niente
+  `lb-mgmt-net`, VLAN, immagine amphora, flavor o certificati. Limiti: solo L4, algoritmo `SOURCE_IP_PORT`,
+  niente HTTP/L7 ne' terminazione TLS. Password: controlla `octavia_*` in `passwords.yml` e, se mancano,
+  indica `kolla-genpwd` (chiave vuota) o `kolla-mergepwd` (chiave assente: `kolla-genpwd` non aggiunge chiavi).
+- `02`: `octavia_flag()` conserva `enable_octavia` ai rilanci (come `masakari_flag`); le chiavi provider OVN
+  sono scritte sempre. `run_all.sh`/`install.sh`: fase opzionale `ENABLE_OCTAVIA=1` dopo il `04`. `05`: la
+  ripartenza indica il `06`.
+- `test_render.sh`: 13 controlli in piu' (190): enable_octavia iniziale/conservato/non forzabile, driver solo
+  OVN, override INI, scrittura idempotente delle chiavi, tag del deploy, aggancio a run_all/install/05.
+  Collaudo: LBA-01..04 adattati al provider OVN (provider `ovn`, `--provider ovn`, listener TCP con
+  `SOURCE_IP_PORT`, failover SKIP se il provider non e' amphora).
+
 ### Corretto
+- `install.sh`: l'auto-elevazione con `sudo` perdeva `ENABLE_MASAKARI`/`MASAKARI_ACCEPT_NOFENCING` (sudo
+  azzera l'ambiente): lanciato da utente normale, il `04` non partiva mai. Ora le passa insieme a `ENABLE_OCTAVIA`.
+- `run_all.sh`: con il gate offline fallito il messaggio diceva "correggi lib_topology.sh" anche per errori
+  altrove; ora rimanda a `test_render.log` e alle righe [FAIL].
 - Pacchetto TEST, `acceptance/` (falsi PASS nel collaudo, nessuna modifica al deploy):
   - `tests/50_resilience.sh`: dopo un'attesa (`wait_for`, `wait_node_up`, `wait_cluster_back`) il
     controllo usava `last_rc0`, cioe' il codice dell'ultimo comando con evidenza (il `reboot` o il
@@ -366,6 +389,9 @@ caso sbagliava in due punti.
 - Skyline era gia' attivo di default dalla v1.6.1 (`enable_skyline: "yes"`, console `VIP:9999`).
 
 ### Non provato
+- `06_octavia.sh`: verificato solo offline (sintassi, generatori, override, tag). Deploy, verifica e LB di
+  prova non eseguiti su un cloud reale. Nel collaudo LBA-03 la raggiungibilita' del VIP OVN dal namespace
+  `ovnmeta` va confermata sul campo.
 - `configura_topologia.sh`: verificato solo offline (fatti simulati, un piano 172.20.x con /23 e ottetti diversi).
   Mai eseguito su nodi reali con `ip` vero e SSH reale; la lettura via SSH dei nodi non e' stata provata.
 - Il rilevamento dei nomi di bond/VLAN (`--detect-ifaces`): verificato solo offline, con un `ip` finto che

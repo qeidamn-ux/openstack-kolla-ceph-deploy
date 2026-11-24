@@ -12,6 +12,7 @@ This package contains everything required to deploy the cloud. Functional tests 
 - [Bare-Metal Usage (the 3 real nodes)](#bare-metal-usage-the-3-real-nodes)
 - [Proxy, Internal NTP and Network Diagnostics](#proxy-internal-ntp-and-network-diagnostics-bare-metal)
 - [Masakari — Instance HA (optional, Phase A)](#masakari--instance-ha-optional-phase-a)
+- [Octavia — Load Balancer (optional, OVN provider)](#octavia--load-balancer-optional-ovn-provider)
 - [Cluster Shutdown and Startup (MariaDB Galera)](#cluster-shutdown-and-startup-mariadb-galera)
 - [Reset and Redeploy (`05_reset.sh`)](#reset-and-redeploy-05_resetsh--destructive)
 - [Skyline — Dashboard](#skyline--dashboard)
@@ -32,6 +33,7 @@ lib_topology.sh        Single source of truth for topology (sourced by all)
 02_deploy_*.sh         globals.yml + OpenStack deploy (OVN, Barbican, Ceph)
 03_configure_*.sh      Post-deploy: openrc, external network, demo project, flavor, keypair
 04_masakari.sh         [OPTIONAL] Masakari, Instance HA, Phase A (without fencing)
+06_octavia.sh          [OPTIONAL] Octavia load balancer, OVN provider only (no amphora)
 05_reset.sh            [UTILITY] Reset/redeploy, DESTRUCTIVE (openstack | ceph | all)
 run_all.sh             "One-shot" wrapper (00..03, + functional tests if package present)
 install.sh             TUI front-end (phase banners) on top of run_all
@@ -366,6 +368,39 @@ Containers (`hacluster_*`, `masakari_*`), Corosync quorum, online nodes in Pacem
 - `MASAKARI_PROTECT_ALL` — default `yes` (all VMs); set to `no` to target only VMs tagged with metadata `HA_Enabled=True`.
 - `MASAKARI_RECOVERY` — default `auto` (no spare hosts are available in 3-node layouts).
 
+## Octavia — Load Balancer (optional, OVN provider)
+
+Load Balancer as a Service with the **OVN provider only**: load balancing is implemented inside OVN and distributed across the chassis, with no amphora VMs. Like Masakari, it is added **after step 03**, on a healthy cloud, with a dedicated script. Step 02 never enables it, and later re-runs keep what step 06 wrote (`enable_octavia`, OVN-only drivers, `octavia.conf` override).
+
+```bash
+sudo bash 06_octavia.sh                 # Configuration + deploy + verification + test LB
+sudo bash 06_octavia.sh --config-only   # Only globals.yml + override, no deploy
+sudo bash 06_octavia.sh --verify        # Verifications only (read-only)
+sudo bash 06_octavia.sh --test-lb       # Test LB on os-test-net (created by 03b), then deleted
+# Via chain: ENABLE_OCTAVIA=1 ./run_all.sh
+```
+
+What step 06 does:
+
+- checks that the `octavia_*` passwords exist in `passwords.yml` (they come from the Kolla template copied by step 01; if a key is missing entirely, use `kolla-mergepwd`: `kolla-genpwd` only fills keys that already exist);
+- sets `enable_octavia: "yes"`, `octavia_provider_drivers: "ovn:OVN provider"`, `octavia_provider_agents: "ovn"` in `globals.yml`;
+- writes `/etc/kolla/config/octavia.conf` with `[api_settings] default_provider_driver = ovn`. Kolla only sets the enabled drivers, and Octavia's built-in default is `amphora`: without this override, `openstack loadbalancer create` without `--provider` fails;
+- runs `kolla-ansible deploy --tags common,haproxy,horizon,octavia` (plus `skyline` when Skyline is enabled, so the dashboard shows load balancers);
+- installs `python-octaviaclient` in the Kolla venv;
+- verifies `octavia_api` / `octavia_driver_agent` on the control nodes, the API on the VIP (port 9876), the provider list (`ovn` present, `amphora` absent) and the effective default provider, then creates and deletes a test LB with a TCP listener and a `SOURCE_IP_PORT` pool.
+
+With only `ovn` in the drivers, Kolla turns off `octavia_auto_configure` and the certificate checks: no `lb-mgmt-net`, no dedicated VLAN, no amphora image, no flavor, no certificates.
+
+### OVN provider limits
+
+- Layer 4 only: TCP, UDP, SCTP listeners. **No HTTP/HTTPS listeners, L7 policies or TLS termination.**
+- Only the `SOURCE_IP_PORT` algorithm (no `ROUND_ROBIN` / `LEAST_CONNECTIONS`).
+- Health monitors: TCP and UDP-CONNECT only.
+- No amphora failover (`openstack loadbalancer failover` does not apply).
+- A floating IP can be associated with the VIP port (requires the External network, see step 03).
+
+If L7 or TLS termination is needed, the amphora provider requires a dedicated `lb-mgmt` VLAN, a second physnet and a host interface on the controllers: a separate project.
+
 ---
 
 ## Cluster Shutdown and Startup (MariaDB Galera)
@@ -533,6 +568,7 @@ sudo OSD_ENCRYPT=no bash 01b_setup_ceph_3NODE.sh
 - **Barbican:** move from `simple_crypto` to HSM/Vault.
 - **Encrypted OSDs:** move LUKS keys from MON config-keys to an external KMS (Vault) to decouple them from the cluster.
 - **Cinder coordinator:** migrate to Valkey in place of Redis (2025.2+).
+- **Octavia:** OVN provider only (L4). L7/TLS termination would need the amphora provider (dedicated `lb-mgmt` VLAN, certificates, image).
 - **OpenStack client:** use `kolla_toolbox` instead of pip installs (isolated clusters without PyPI egress).
 - **RAID controllers** in non-RAID layouts: switch to native HBAs (true IT mode).
 - **Hostnames:** short, consistent hostnames across all nodes (OVN prerequisite).

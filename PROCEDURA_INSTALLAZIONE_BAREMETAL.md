@@ -1,6 +1,6 @@
 # Installation on three physical servers — complete procedure
 
-Valid for the OpenStack Automation Suite v1.7 (OpenStack 2025.1 "Epoxy" deployed with Kolla-Ansible, encrypted Ceph, OVN, Barbican, Skyline, Masakari) on **3 physical servers** running Ubuntu 24.04, with access, if needed, **from the console only** (no copy/paste). Network values (VLAN, subnet, IP) are shown as placeholders: they are provided by the network team and typed in at the scripts' prompts.
+Valid for the OpenStack Automation Suite v1.7 (OpenStack 2025.1 "Epoxy" deployed with Kolla-Ansible, encrypted Ceph, OVN, Barbican, Skyline, Masakari, optional Octavia with the OVN provider) on **3 physical servers** running Ubuntu 24.04, with access, if needed, **from the console only** (no copy/paste). Network values (VLAN, subnet, IP) are shown as placeholders: they are provided by the network team and typed in at the scripts' prompts.
 
 Order: A prerequisites → B node checks → C network → D SSH keys → E topology → F installation → G verification → H functional tests → I troubleshooting.
 
@@ -182,6 +182,16 @@ cd acceptance && ./acceptance_test.sh --run L1,L2 --level 2
 ```
 (`source` environment as in G; `DEPLOY_DIR` is the folder of the deploy package.)
 
+## H.1 Octavia load balancer (optional, on the installed cloud)
+
+Only after G is clean (and preferably after the `03b`, which creates the `os-test-net` network used by the test load balancer). OVN provider only: no new VLAN, image or certificates are needed. From node01, in tmux, inside the deploy package folder:
+```
+cd /root/OPENSTACK_deploy_*
+sudo LAB_MODE=0 bash 06_octavia.sh             # about 10-20 minutes
+sudo LAB_MODE=0 bash 06_octavia.sh --verify    # re-check at any time
+```
+Expected at the end: `Octavia operativo` and `OS_OCTAVIA_LB_OK`. Without `os-test-net` the test LB is skipped with a `[WARN]` (not an error). Re-running `02` later does not switch Octavia off. Limits to report in the handover: layer 4 only (TCP/UDP), `SOURCE_IP_PORT` algorithm, no HTTP listeners or TLS termination.
+
 ## I. Common problems
 
 | Symptom | What to do |
@@ -195,6 +205,9 @@ cd acceptance && ./acceptance_test.sh --run L1,L2 --level 2
 | "unsynchronized" | `sudo chronyc makestep; sleep 20; timedatectl`, or `NTP_SERVERS_CSV` |
 | Failed downloads (apt, pip, images) | internet egress blocked: network team |
 | Unstable VIP failover | possible VRRP conflict: use a different `VRRP_ROUTER_ID` |
+| `06_octavia`: `password mancanti` (missing passwords) | follow the `kolla-genpwd` / `kolla-mergepwd` commands printed by the script |
+| `06_octavia`: `API Octavia non risponde` (API not responding) | `kolla-ansible reconfigure -i /etc/kolla/multinode --tags haproxy`, then `--verify` |
+| `loadbalancer create` asks for `amphora` | override `/etc/kolla/config/octavia.conf` missing: re-run `06_octavia.sh` |
 | Start from scratch | `05_reset.sh` (see the script header) |
 
 For any `[FAIL]` lines that remain: send them to whoever maintains the installation.

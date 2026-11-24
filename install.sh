@@ -28,7 +28,12 @@ fi
 
 # auto-elevazione: tutta la catena gira da root (nessun prompt sudo a meta' run)
 # NB: niente '-E' (alcune sudoers lo vietano). LAB_MODE lo ripristina l'export sotto.
-if [ "$(id -u)" != 0 ]; then exec sudo LAB_MODE="${LAB_MODE}" LAB_KVM="${LAB_KVM:-$LAB_MODE}" RUN_FUNCTIONAL="${RUN_FUNCTIONAL:-1}" TESTS_DIR="${TESTS_DIR:-}" bash "$0" "$@"; fi
+## DAVE
+# sudo azzera l'ambiente: le fasi opzionali (04, 06) vanno passate esplicitamente
+if [ "$(id -u)" != 0 ]; then exec sudo LAB_MODE="${LAB_MODE}" LAB_KVM="${LAB_KVM:-$LAB_MODE}" RUN_FUNCTIONAL="${RUN_FUNCTIONAL:-1}" TESTS_DIR="${TESTS_DIR:-}" \
+  ENABLE_MASAKARI="${ENABLE_MASAKARI:-0}" MASAKARI_ACCEPT_NOFENCING="${MASAKARI_ACCEPT_NOFENCING:-0}" ENABLE_OCTAVIA="${ENABLE_OCTAVIA:-0}" \
+  bash "$0" "$@"; fi
+## DAVE
 export LAB_MODE
 export LAB_KVM="${LAB_KVM:-$LAB_MODE}"
 
@@ -52,6 +57,10 @@ PHASES=(
 ## DAVE
 # Masakari e' opzionale: compare nel banner solo se richiesto (export ENABLE_MASAKARI=1)
 [ "${ENABLE_MASAKARI:-0}" = 1 ] && PHASES+=("04_masakari|Masakari · HA istanze")
+## DAVE
+## DAVE
+# Octavia e' opzionale: compare nel banner solo se richiesto (export ENABLE_OCTAVIA=1)
+[ "${ENABLE_OCTAVIA:-0}" = 1 ] && PHASES+=("06_octavia|Octavia · load balancer OVN")
 ## DAVE
 NP=${#PHASES[@]}
 # Pacchetto TEST FUNZIONALI (opzionale): cerco, nell'ordine, $TESTS_DIR, questa cartella,

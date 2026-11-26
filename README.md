@@ -584,3 +584,6 @@ We gratefully acknowledge the organizations and professionals who endorse and va
 * **[Altro Endorser]** — *Role / Context*
 
 *(If your organization uses or endorses this deployment suite, feel free to open a Pull Request to add your name to the list.)*
+## License
+
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)** — see the [LICENSE](LICENSE) file for details.

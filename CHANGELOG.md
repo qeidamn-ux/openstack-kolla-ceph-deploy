@@ -352,6 +352,9 @@ caso sbagliava in due punti.
   cicli fd 3. Ora girano con stdin=/dev/null.
 - `install.sh`: il banner conteneva ancora il nome di un'organizzazione (lettere spaziate, sfuggito
   alla pulizia precedente): ora e' neutro.
+- `README.md`: aggiunto il riferimento alla licenza GPL-3.0 (`LICENSE`). Riallineati `CHECKSUMS.sha256`
+  e gli zip dei due pacchetti: il checksum del README non tornava e `LICENSE` non era incluso nello
+  zip del deploy. Rimosso `invia.txt` (bozza di messaggio, non parte del pacchetto).
 
 ### Struttura
 - La suite si distribuisce in DUE pacchetti, stessa release: **deploy** (lib, 00, 01, 01b, 02, 03,

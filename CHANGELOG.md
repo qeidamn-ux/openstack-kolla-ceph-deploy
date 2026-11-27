@@ -16,6 +16,9 @@ MTU tenant corretta (1500), RabbitMQ/Ceph/OVN/Cinder/Barbican tutti in HA e veri
 - Keepalived: router id VRRP configurabile (`VRRP_ROUTER_ID`, default 51, valore 1-255) per evitare conflitti con altri VRRP nella stessa rete.
 - Banner finale di `run_all.sh` e `install.sh`: mostrano `http://<VIP>` letto dalla topologia. `04_masakari.sh`: testo sulla rete di prova allineato al `03b`.
 - Supporto proxy (uscita internet solo tramite proxy): nuovo `configura_proxy.sh` (`/etc/environment`, apt e drop-in Docker su tutti i nodi, `NO_PROXY` con nodi/VIP/subnet, `--dry-run`, `--verify`); `lib_topology.sh` con `PROXY_URL`, `NO_PROXY_EXTRA`, `topo_no_proxy`; il `00` controlla gli endpoint via proxy (con proxy non usa connessioni dirette) e segnala `no_proxy` senza VIP; il `01` scrive il drop-in Docker prima dell'avvio.
+## DAVE
+- `00` e `configura_proxy.sh --verify`: aggiunto `download.cirros-cloud.net` agli endpoint controllati. Serve solo al `03b` per l'immagine CirrOS: se non e' raggiungibile il deploy prosegue e lo smoke test viene saltato. Il `03b` scarica con `curl`, che rispetta `NO_PROXY` con subnet (wget non lo faceva).
+## DAVE
 - `02`: con `NTP_LOCAL_MASTER` attivo il globals.yml imposta `prechecks_enable_host_ntp_checks: "false"` (il master usa solo il proprio orologio e `timedatectl` lo vede non sincronizzato: il precheck NTP di Kolla fallirebbe su quel nodo). Senza `NTP_LOCAL_MASTER` il precheck resta attivo.
 - `01` (Kolla-Ansible): se il ramo `stable/<rel>` della collezione `ansible-collection-kolla` non esiste piu' (rilascio passato a unmaintained) e `unmaintained/<rel>` si, il `requirements.yml` del venv viene corretto prima di `kolla-ansible install-deps`. Prima `install-deps` falliva con "pathspec 'stable/2025.1' did not match".
 - `00`: il test jumbo (MTU 9000 fra i nodi) ora CONTA nel gate: prima un jumbo che non passava veniva solo stampato e il bootstrap risultava comunque completato. Ritenta 3 volte prima di segnare KO.

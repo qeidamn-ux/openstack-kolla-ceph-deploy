@@ -65,7 +65,9 @@ if [ "$VERIFY" = 1 ]; then
 px="${https_proxy:-${http_proxy:-}}"; r=0
 [ -n "$px" ] || { echo "  [FAIL] nessun proxy in ambiente (rientra dal login o: set -a; . /etc/environment; set +a)"; exit 1; }
 case ",${no_proxy:-}," in *",$1,"*) echo "  [OK] no_proxy contiene il VIP";; *) echo "  [FAIL] no_proxy senza VIP"; r=1;; esac
-for u in http://archive.ubuntu.com/ubuntu/dists/noble/InRelease http://security.ubuntu.com/ubuntu/dists/noble-security/InRelease https://quay.io/v2/ https://download.docker.com/linux/ubuntu/gpg https://pypi.org/simple/ https://files.pythonhosted.org/; do
+  ## DAVE
+  for u in http://archive.ubuntu.com/ubuntu/dists/noble/InRelease http://security.ubuntu.com/ubuntu/dists/noble-security/InRelease https://quay.io/v2/ https://download.docker.com/linux/ubuntu/gpg https://pypi.org/simple/ https://files.pythonhosted.org/ https://download.cirros-cloud.net/; do
+  ## DAVE
   c="$(curl -sS -o /dev/null -I -m25 -w '%{http_code}' --proxy "$px" "$u" 2>/dev/null)"
   case "$c" in 000|"") echo "  [FAIL] $u"; r=1;; *) echo "  [OK] $u (HTTP $c)";; esac
 done

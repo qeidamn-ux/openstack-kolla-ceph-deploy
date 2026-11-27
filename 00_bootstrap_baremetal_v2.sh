@@ -958,6 +958,11 @@ if [ -n "$px" ]; then
   pcheck "https://download.docker.com/linux/ubuntu/gpg" "Docker CE repo (01)"                   any || fail=1
   pcheck "https://pypi.org/simple/"                     "kolla-ansible via pip (01)"            any || fail=1
   pcheck "https://files.pythonhosted.org/"              "wheel pip (01)"                        any || fail=1
+  ## DAVE
+  # CirrOS serve solo al 03b (smoke test): se manca il 03b salta lo smoke, il deploy non si ferma.
+  pcheck "https://download.cirros-cloud.net/" "cirros non raggiungibile: serve solo al 03b" any \
+    || echo "  [WARN] cirros non raggiungibile: serve solo al 03b (smoke test saltato)"
+  ## DAVE
 else
 # DNS: se non risolve, tutto il resto e' rumore
 if ! getent hosts quay.io >/dev/null 2>&1; then
@@ -977,6 +982,14 @@ check quay.io               443  "immagini container OpenStack (02: ~GB)"    || 
 check download.docker.com   443  "Docker CE repo (01)"                       || fail=1
 check pypi.org              443  "kolla-ansible via pip (01)"                || fail=1
 check files.pythonhosted.org 443 "wheel pip (01)"                            || fail=1
+  ## DAVE
+  # CirrOS serve solo al 03b: avviso non bloccante, senza incrementare 'fail'.
+  if timeout 8 bash -c 'echo > /dev/tcp/download.cirros-cloud.net/443' 2>/dev/null; then
+    echo '  [OK] https://download.cirros-cloud.net/ (cirros non raggiungibile: serve solo al 03b)'
+  else
+    echo '  [WARN] cirros non raggiungibile: serve solo al 03b (smoke test saltato)'
+  fi
+  ## DAVE
 fi
 exit $fail
 EOF

@@ -126,6 +126,9 @@ bash configura_proxy.sh --verify                         # tests the deployment 
 On each node the script writes `/etc/environment` (proxy and `NO_PROXY`), `/etc/apt/apt.conf.d/95proxy` and the Docker daemon drop-in. `NO_PROXY` contains the cluster's nodes, VIP and subnets: **it is essential**, otherwise the OpenStack APIs, Ceph and the CLI go through the proxy and do not work. Extra entries: `NO_PROXY_EXTRA="a,b"` in `topology.conf`. The URL can live in `topology.conf` as `PROXY_URL="http://IP:PORT"`.
 
 Limits: the proxy does not carry NTP (UDP 123): you need an internal NTP server (`NTP_SERVERS_CSV`) or the port opened. If no NTP server is reachable, `NTP_LOCAL_MASTER="node01"` in `topology.conf` makes node01 the source for the other two (the nodes stay aligned with each other, which is what Ceph needs; the absolute time may be wrong: set it beforehand with `date -s`). A proxy with TLS inspection requires installing its CA certificate on the nodes (not handled by the scripts). With the proxy active, `00` checks the endpoints via the proxy (not with direct connections).
+## DAVE
+`download.cirros-cloud.net` e' controllato insieme agli altri endpoint: serve solo al `03b` per l'immagine CirrOS; se non e' raggiungibile il deploy prosegue e lo smoke test viene saltato.
+## DAVE
 
 ### E.2 Optional settings (before launch)
 

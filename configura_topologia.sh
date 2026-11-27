@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # configura_topologia.sh — scopre dai nodi IP, VLAN e nomi delle interfacce e scrive
 #   topology.conf e ifaces.conf (accanto a lib_topology.sh).

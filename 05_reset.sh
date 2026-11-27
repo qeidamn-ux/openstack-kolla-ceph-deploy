@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # 05_reset.sh — RESET / preparazione al REDEPLOY (DISTRUTTIVO)
 #   Gira DALLA MACCHINA DI DEPLOY (come gli altri script). Topologia da

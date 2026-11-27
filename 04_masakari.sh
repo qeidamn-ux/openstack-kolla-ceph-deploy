@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 ## DAVE
 # =============================================================================
 # 04_masakari.sh — Masakari (Instance HA) — FASE A: rilevamento

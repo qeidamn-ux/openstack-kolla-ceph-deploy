@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # run_all.sh — Lancia l'intera catena in un colpo solo (LAB_MODE).
 ## DAVE

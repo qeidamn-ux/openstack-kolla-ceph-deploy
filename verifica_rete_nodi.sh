@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 ## DAVE
 # =============================================================================
 # verifica_rete_nodi.sh — controllo di rete tra tutti i nodi (ping, MTU, porte TCP, stato fisico).

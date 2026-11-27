@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # 01_prepare_nodes_3NODE.sh — 3 nodi iperconvergenti (OpenStack + Ceph)
 #   Server bare-metal. Prepara i nodi per il deploy Kolla-Ansible 2025.1.

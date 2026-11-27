@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # shellcheck disable=SC2034  # variabili consumate dagli script che fanno source di questa lib
 # =============================================================================
 # lib_topology.sh — SORGENTE UNICA della topologia.

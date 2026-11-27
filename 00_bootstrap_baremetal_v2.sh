@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # 00_bootstrap_baremetal.sh — v2 — 3 nodi iperconvergenti (OpenStack + Ceph)
 #   Server bare-metal — Ubuntu 24.04 LTS gia' installato.

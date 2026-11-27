@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # 02_deploy_openstack_3NODE.sh — Deploy OpenStack 2025.1 (Epoxy)
 #   su nodi iperconvergenti, con OVN, Barbican ed External Ceph.

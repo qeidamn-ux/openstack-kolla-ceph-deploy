@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 ## DAVE
 # =============================================================================
 # configura_proxy.sh — uscita internet SOLO tramite proxy: configura i tre nodi.

@@ -1,2 +1,6 @@
 osd_disks.conf
 logs-*/
+
+# Local output and notes
+reports/
+research_notes/

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # install.sh — Front-end TUI per il deploy.
 #   Mostra un BANNER elegante con l'avanzamento per fasi (spinner + tempi).

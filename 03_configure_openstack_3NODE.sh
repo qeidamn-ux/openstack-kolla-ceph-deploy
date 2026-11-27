@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # 03_configure_openstack_3NODE.sh — Post-deploy: configurazione del cloud.
 #   Gira DALL'HOST di deploy. Topologia da lib_topology.sh.

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Davide Marino
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # 01b_setup_ceph_3NODE.sh — Ceph Squid (cephadm) su 3 nodi
 #   iperconvergenti, integrato con Kolla come "External Ceph".
